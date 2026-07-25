@@ -1,0 +1,27 @@
+name: Reporte Ejecutivo Semanal - Reclutamiento y Bajas
+
+on:
+  schedule:
+    # Domingos 09:00 hora CDMX (UTC-6) = 15:00 UTC
+    - cron: "0 15 * * 0"
+  workflow_dispatch: {}
+
+jobs:
+  enviar-reporte:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Ejecutar reporte
+        env:
+          GOOGLE_TOKEN_JSON: ${{ secrets.GOOGLE_TOKEN_JSON }}
+        run: python main.py
