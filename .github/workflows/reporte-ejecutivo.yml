@@ -3,7 +3,7 @@ name: Reporte Ejecutivo Semanal - Reclutamiento y Bajas
 on:
   schedule:
     # Domingos 23:00 hora CDMX (UTC-6) = 05:00 UTC del lunes
-    - cron: "0 15 * * 1"
+    - cron: "0 5 * * 1"
   workflow_dispatch: {}
 
 jobs:
