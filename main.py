@@ -251,7 +251,7 @@ def construir_html(entrevistas, contrataciones, bajas, inicio, fin, semana_actua
           {tarjeta(total_entrevistas, "Entrevistas", "#F1C40F")}
           {tarjeta(total_contratados, "Contrataciones", "#2ECC71")}
           {tarjeta(tasa, "Tasa de conversión", "#2C3E50")}
-          {tarjeta(total_bajas, "Bajas (sem. anterior)", "#E74C3C")}
+          {tarjeta(total_bajas, "Bajas", "#E74C3C")}
         </tr>
       </table>
 
@@ -274,11 +274,6 @@ def construir_html(entrevistas, contrataciones, bajas, inicio, fin, semana_actua
       <div style="text-align:center;margin:24px 0 8px;">
         <img src="cid:grafica_bajas" style="max-width:100%;height:auto;" alt="Bajas por hotel">
       </div>
-
-      <p style="color:#9CA3AF;font-size:11px;margin:4px 0 16px;">
-        * Las bajas corresponden a la semana anterior ({inicio_bajas_txt} al {fin_bajas_txt}), ya que los
-        hoteles reportan sus bajas a más tardar el domingo y esta semana aún podría estar incompleta.
-      </p>
 
       <h3 style="color:#2C3E50;margin-top:8px;">Detalle de bajas</h3>
       <table style="border-collapse:collapse;width:100%;font-size:13px;">
@@ -338,19 +333,18 @@ def main():
     gmail_service = build("gmail", "v1", credentials=creds)
 
     inicio, fin = get_ventana_semana()
-    inicio_bajas, fin_bajas = get_ventana_semana_anterior()
     semana_actual = obtener_semana_iso_actual(fin)
 
     entrevistas = obtener_entrevistas_semana(sheets_service, semana_actual)
     contrataciones = obtener_contrataciones_semana(sheets_service, semana_actual)
-    bajas = obtener_bajas_semana(sheets_service, inicio_bajas, fin_bajas)
+    bajas = obtener_bajas_semana(sheets_service, inicio, fin)
 
     graficas = generar_graficas(entrevistas, contrataciones, bajas)
-    html = construir_html(entrevistas, contrataciones, bajas, inicio, fin, semana_actual, inicio_bajas, fin_bajas)
+    html = construir_html(entrevistas, contrataciones, bajas, inicio, fin, semana_actual, inicio, fin)
     enviar_correo(gmail_service, html, graficas, inicio, fin)
 
     print(f"Reporte enviado. Semana {semana_actual} | Entrevistas: {len(entrevistas)} | "
-          f"Contrataciones: {len(contrataciones)} | Bajas (semana anterior): {len(bajas)}")
+          f"Contrataciones: {len(contrataciones)} | Bajas (misma semana): {len(bajas)}")
 
 
 if __name__ == "__main__":
