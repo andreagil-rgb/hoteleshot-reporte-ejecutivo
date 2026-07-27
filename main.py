@@ -16,6 +16,7 @@ import base64
 import datetime as dt
 import json
 import os
+import zoneinfo
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -34,6 +35,35 @@ from sheets_utils import (
     rows_as_dicts,
 )
 
+TZ_CDMX = zoneinfo.ZoneInfo("America/Mexico_City")
+
+
+def hoy_cdmx():
+    """
+    Fecha de HOY en hora de Ciudad de México, no la fecha UTC del servidor.
+    Esto importa porque el workflow corre cerca de medianoche del domingo
+    (23:00 CDMX), que en UTC ya es lunes de madrugada -- sin este ajuste,
+    el reporte calcularía mal la semana ISO y las ventanas de fecha.
+    """
+    return dt.datetime.now(TZ_CDMX).date()
+
+
+def domingo_de_referencia(hoy=None):
+    """
+    Devuelve el domingo más reciente (hoy mismo si hoy ya es domingo).
+
+    GitHub avisa explícitamente que los workflows con `cron` pueden
+    retrasarse (a veces varios minutos). Si el reporte estaba programado
+    para las 23:00 del domingo y se retrasa cruzando a la madrugada del
+    lunes, `hoy_cdmx()` ya reportaría "lunes" -- y con eso el número de
+    semana ISO cambiaría a la semana que apenas empieza (sin datos todavía),
+    en vez de la semana que se acaba de cerrar. Por eso siempre anclamos al
+    domingo más reciente, sin importar a qué hora exacta corrió el script.
+    """
+    hoy = hoy or hoy_cdmx()
+    dias_desde_domingo = (hoy.weekday() + 1) % 7  # domingo=6 -> 0, lunes=0 -> 1, ...
+    return hoy - dt.timedelta(days=dias_desde_domingo)
+
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets.readonly",
     "https://www.googleapis.com/auth/gmail.send",
@@ -47,10 +77,11 @@ def get_credentials():
 
 
 def get_ventana_semana(hoy=None):
-    """Últimos 7 días naturales (lunes a domingo), terminando hoy."""
-    hoy = hoy or dt.date.today()
-    inicio = hoy - dt.timedelta(days=config.DIAS_VENTANA_REPORTE - 1)
-    return inicio, hoy
+    """Últimos 7 días naturales (lunes a domingo), terminando en el domingo
+    de referencia (no en la fecha/hora exacta en que corrió el script)."""
+    fin = domingo_de_referencia(hoy)
+    inicio = fin - dt.timedelta(days=config.DIAS_VENTANA_REPORTE - 1)
+    return inicio, fin
 
 
 def get_ventana_semana_anterior(hoy=None):
@@ -73,8 +104,7 @@ def get_ventana_semana_anterior(hoy=None):
 
 def obtener_semana_iso_actual(hoy=None):
     """Número de semana ISO del año (coincide con la columna SEMANA de la base)."""
-    hoy = hoy or dt.date.today()
-    return hoy.isocalendar()[1]
+    return domingo_de_referencia(hoy).isocalendar()[1]
 
 
 def obtener_entrevistas_semana(sheets_service, semana_actual):
