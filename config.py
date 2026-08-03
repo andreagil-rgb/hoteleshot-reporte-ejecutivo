@@ -19,7 +19,7 @@ TRACKER_TAB = "TRACKER"
 # ---------------------------------------------------------------------------
 # Destinatario del reporte ejecutivo
 # ---------------------------------------------------------------------------
-DESTINATARIOS_TO = ["andrea.gil@hoteleshot.com"]   # <-- confirmar correo real de Manolo
+DESTINATARIOS_TO = ["manuel.salceda@hoteleshot.com"]   # <-- confirmar correo real de Manolo
 DESTINATARIOS_CC = []
 
 REMITENTE_NOMBRE = "Andrea Gil - Recursos Humanos"
